@@ -203,7 +203,7 @@ class PrimeiraLayDeNilton():
     self.camera.snap()
     animation = self.camera.animate(interval=10)
     an_writer = manimation.writers['ffmpeg']
-    writer = an_writer(fps=2, metadata=dict(artist='Compliance B2W'), bitrate=1000)
+    writer = an_writer(fps=2, metadata=dict(artist='Nilton Duarte'), bitrate=1000)
     animation.save('evo.mp4', writer=writer)
 
 

@@ -1,0 +1,22 @@
+version: "3.4"
+services:
+  challenge_app:
+    build: 
+      context: ./app
+      network: ext
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app/:/app
+    networks:
+      - ext
+      - int
+
+networks:
+  ext:
+    external:
+      name: ext
+  int:
+    external:
+      name: int
+

@@ -22,6 +22,7 @@ print("##################")
 print("##  Starting..  ##")
 print("##################")
 
+print(tf.config.experimental.list_physical_devices())
 
 
 
@@ -35,8 +36,8 @@ class PrimeiraLayDeNilton():
     self.num_feat = num_feat
     self.n = num_points # Number of data points 
 
-    self.X = tf.compat.v1.placeholder(tf.float64, shape=(self.n,self.num_feat+1)) 
-    self.Y = tf.compat.v1.placeholder(tf.float64, shape=(self.n, 1)) 
+    self.X = tf.compat.v1.placeholder(tf.float64, shape=(self.n,self.num_feat+1), name="X") 
+    self.Y = tf.compat.v1.placeholder(tf.float64, shape=(self.n, 1), name="Y") 
 
     w = np.random.random((self.num_feat+1,1))
     self.W = tf.Variable(initial_value=w, name = "W", shape=(self.num_feat+1, 1)) 
@@ -55,71 +56,36 @@ class PrimeiraLayDeNilton():
 
   def set_conditions(self):
     # Hypothesis 
-    self.y_pred = tf.matmul(self.X, self.W)
+    self.y_pred = tf.matmul(self.X, self.W, name='y_pred')
 
     # Mean Squared Error Cost Function 
     self.cost = tf.reduce_sum(
        tf.square(self.y_pred-self.Y)
-      )
+      , name='cost')
 
     # Gradient Descent Optimizer 
-    self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate).minimize(self.cost) 
+    self.optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate, name="AdamOpt").minimize(self.cost) 
 
   def start_calculations(self, new_data_set_count, step_limit):
     
-    self.set_conditions()
-    # Genrating random linear data 
-    # There will be n data points ranging from 0 to 50 
-    x = [np.linspace(0, 20, self.n), np.linspace(0, 30, self.n)]
-    y = [np.linspace(0, 50, self.n)] 
-
-    # Adding noise to the random linear data 
-    x = np.transpose(x)
-    x = np.c_[x, np.ones(self.n)]
-    y += np.random.uniform(-0, 0, self.n) 
-    y = y.T
-    self.add_data_history(y)
-    print("x.shape  \t=",x.shape)
-    print("y.shape \t=",y.shape)
-    print("W.shape \t=",self.W.shape)
-    print("y_pred.shape \t=",self.y_pred.shape)
-    print("Y.shape \t=",self.Y.shape)
-    print("diff     \t=",(self.y_pred-self.Y).shape)
-
-    # Global Variables Initializer 
-    init = tf.compat.v1.global_variables_initializer() 
-
-    # Starting the Tensorflow Session 
-    with tf.compat.v1.Session() as sess: 
-      
-      ### First round
-      # Initializing the Variables 
-      sess.run(init) 
-      for epoch in range(self.training_epochs): 
-        sess.run(self.optimizer, feed_dict = {self.X : x, self.Y : y}) 
-
-      # Storing necessary values to be used outside the Session 
-      training_cost = sess.run(self.cost, feed_dict ={self.X: x, self.Y: y})
-      iter_weight = sess.run(self.W) 
-      print("============================================")
-      print("Training cost =", training_cost, "iter_weight =\n", iter_weight,'\n') 
-      print("============================================")
-      ### Iterate round
-    
+    iter_weight = np.random.random((self.num_feat+1,1))
     accumulated_weight = np.eye(self.num_feat+1)
     change_sum = 0
+    iter_index = 0
     for incoming_new_values in range(1,new_data_set_count):
-
+      iter_index +=1 
       w = np.ones((self.num_feat+1,1))
       self.W = tf.Variable(initial_value=w, name = "W", shape=(self.num_feat+1, 1)) 
       self.set_conditions()
+
+      # Global Variables Initializer 
       init = tf.compat.v1.global_variables_initializer() 
 
       # Starting the Tensorflow Session 
       with tf.compat.v1.Session() as sess: 
         # Initializing the Variables 
         sess.run(init) 
-      
+        summary_writer = tf.compat.v1.summary.FileWriter('./tensorboard', sess.graph)
         # Genrating random linear data 
         # There will be n data points ranging from 0 to 50 
         x = [np.linspace(0, 20, self.n), np.linspace(0, 30, self.n)]
@@ -141,8 +107,14 @@ class PrimeiraLayDeNilton():
         y += np.random.uniform(0, 0, self.n) 
         y = y.T 
         self.add_data_history(y)
-        # Using past t-1 predicion to fit the new data points
-        
+        #print("x.shape  \t=",x.shape)
+        #print("y.shape \t=",y.shape)
+        #print("W.shape \t=",self.W.shape)
+        #print("y_pred.shape \t=",self.y_pred.shape)
+        #print("Y.shape \t=",self.Y.shape)
+        #print("diff     \t=",(self.y_pred-self.Y).shape)
+
+        # Using past t-1 predicion to fit the new data points        
         accumulated_weight = np.matmul(accumulated_weight, np.diag(iter_weight.T[0]))
         pre_compute_x =np.matmul(x, accumulated_weight)
         
@@ -162,7 +134,7 @@ class PrimeiraLayDeNilton():
 
         centered_weights = iter_weight-np.ones((self.num_feat+1,1))
         step = np.linalg.norm(centered_weights)
-        if step > step_limit:
+        if step > step_limit and iter_index:
           original_weight = iter_weight
           correction_factor = step_limit/step
           iter_weight = (centered_weights*correction_factor)+np.ones((self.num_feat+1,1))
@@ -174,7 +146,7 @@ class PrimeiraLayDeNilton():
         # Calculating the predictions 
         predictions = np.matmul(pre_compute_x,iter_weight)
         print("============================================")
-        print("Training cost =", training_cost)
+        print("== Training cost =", training_cost)
         #print("predictions=",predictions.T, "\ny=", y.T, "\nweight=\n",iter_weight.T)
         print("============================================")
 
@@ -202,4 +174,4 @@ class PrimeiraLayDeNilton():
 
 calc = PrimeiraLayDeNilton(20,2)
 #calc.set_conditions()
-calc.start_calculations(210, 3)
+calc.start_calculations(10, 0)

@@ -107,7 +107,7 @@ class PrimeiraLayDeNilton():
       ### Iterate round
     
     accumulated_weight = np.eye(self.num_feat+1)
-
+    change_sum = 0
     for incoming_new_values in range(1,new_data_set_count):
 
       w = np.ones((self.num_feat+1,1))
@@ -125,17 +125,20 @@ class PrimeiraLayDeNilton():
         x = [np.linspace(0, 20, self.n), np.linspace(0, 30, self.n)]
         change_rate = (incoming_new_values)**0.5
         if np.random.random()<0.9:
-          change_rate *= 1  
+          change_rate *= 2  
         else:
           change_rate *=10
-        y = [np.linspace(0, 50, self.n)*change_rate] 
+        if np.random.random()<0.22:
+          change_sum += (incoming_new_values**0.5)*3
+          
+        y = [(np.random.uniform(-200, 200, self.n)*change_rate)+change_sum]
 
         # Adding noise to the random linear data 
         #x[0] += np.random.uniform(-0, 0, self.n)
         #x[1] += np.random.uniform(-0, 0, self.n)
         x = np.transpose(x)
         x = np.c_[x, np.ones(self.n)]
-        y += np.random.uniform(-20, 20, self.n) 
+        y += np.random.uniform(0, 0, self.n) 
         y = y.T 
         self.add_data_history(y)
         # Using past t-1 predicion to fit the new data points
@@ -191,11 +194,12 @@ class PrimeiraLayDeNilton():
     self.camera.snap()
     animation = self.camera.animate(interval=10)
     an_writer = manimation.writers['ffmpeg']
-    writer = an_writer(fps=3, metadata=dict(artist='Nilton Duarte'), bitrate=1000)
+    writer = an_writer(fps=4, metadata=dict(artist='Nilton Duarte'), bitrate=1000)
     animation.save('evo.mp4', writer=writer)
+    animation.save('evo.gif', writer='imagemagick', fps=4)
 
 
 
-calc = PrimeiraLayDeNilton(30,2)
+calc = PrimeiraLayDeNilton(20,2)
 #calc.set_conditions()
-calc.start_calculations(110, 3)
+calc.start_calculations(210, 3)

@@ -42,13 +42,16 @@ class PrimeiraLayDeNilton():
     self.W = tf.Variable(initial_value=w, name = "W", shape=(self.num_feat+1, 1)) 
 
     self.learning_rate = 0.01
-    self.training_epochs = 150
+    self.training_epochs = 2050
     self.data_history = []
 
   def add_data_history(self, data):
     self.data_history.append(data)
     if len(self.data_history) > 10:
       self.data_history = self.data_history[-10:]
+
+  def add_weight_history(self,weight):
+    pass
 
   def set_conditions(self):
     # Hypothesis 
@@ -67,12 +70,10 @@ class PrimeiraLayDeNilton():
     self.set_conditions()
     # Genrating random linear data 
     # There will be n data points ranging from 0 to 50 
-    x = [np.linspace(0, 50, self.n), np.linspace(0, 50, self.n)]
+    x = [np.linspace(0, 20, self.n), np.linspace(0, 30, self.n)]
     y = [np.linspace(0, 50, self.n)] 
 
     # Adding noise to the random linear data 
-    x[0] += np.random.uniform(-4, 4, self.n)
-    x[1] += np.random.uniform(-4, 4, self.n)
     x = np.transpose(x)
     x = np.c_[x, np.ones(self.n)]
     y += np.random.uniform(-0, 0, self.n) 
@@ -95,43 +96,30 @@ class PrimeiraLayDeNilton():
       # Initializing the Variables 
       sess.run(init) 
       for epoch in range(self.training_epochs): 
-        
-        # Feeding each data point into the optimizer using Feed Dictionary 
-        # for (_x, _y) in zip(x, y):
-          
-        #   _x = np.array([_x])
-        #   _y = np.array([_y])
-          #print("zip",_x, _y)
         sess.run(self.optimizer, feed_dict = {self.X : x, self.Y : y}) 
-
-        # Displaying the result after every 50 epochs 
-        if (epoch) % 50 == 0: 
-          # Calculating the cost a every epoch 
-          c = sess.run(self.cost, feed_dict = {self.X : x, self.Y : y})
-          print("Epoch", (epoch), ": cost =", c, "\nW =\n", sess.run(self.W)) 
-          print("============================================")
 
       # Storing necessary values to be used outside the Session 
       training_cost = sess.run(self.cost, feed_dict ={self.X: x, self.Y: y})
-      weight = sess.run(self.W) 
+      iter_weight = sess.run(self.W) 
       print("============================================")
-      print("Training cost =", training_cost, "Weight =\n", weight,'\n') 
+      print("Training cost =", training_cost, "iter_weight =\n", iter_weight,'\n') 
       print("============================================")
       ### Iterate round
     
+    accumulated_weight = np.eye(self.num_feat+1)
 
-    w = np.ones((self.num_feat+1,1))
-    self.W = tf.Variable(initial_value=w, name = "W", shape=(self.num_feat+1, 1)) 
+    for incoming_new_values in range(1,new_data_set_count):
 
-    self.set_conditions()
-    init = tf.compat.v1.global_variables_initializer() 
+      w = np.ones((self.num_feat+1,1))
+      self.W = tf.Variable(initial_value=w, name = "W", shape=(self.num_feat+1, 1)) 
+      self.set_conditions()
+      init = tf.compat.v1.global_variables_initializer() 
 
-    # Starting the Tensorflow Session 
-    with tf.compat.v1.Session() as sess: 
-      # Initializing the Variables 
-      sess.run(init) 
-
-      for incoming_new_values in range(1,new_data_set_count):
+      # Starting the Tensorflow Session 
+      with tf.compat.v1.Session() as sess: 
+        # Initializing the Variables 
+        sess.run(init) 
+      
         # Genrating random linear data 
         # There will be n data points ranging from 0 to 50 
         x = [np.linspace(0, 20, self.n), np.linspace(0, 30, self.n)]
@@ -143,48 +131,48 @@ class PrimeiraLayDeNilton():
         y = [np.linspace(0, 50, self.n)*change_rate] 
 
         # Adding noise to the random linear data 
-        x[0] += np.random.uniform(-0, 0, self.n)
-        x[1] += np.random.uniform(-0, 0, self.n)
+        #x[0] += np.random.uniform(-0, 0, self.n)
+        #x[1] += np.random.uniform(-0, 0, self.n)
         x = np.transpose(x)
         x = np.c_[x, np.ones(self.n)]
-        y += np.random.uniform(-32, 32, self.n) 
+        y += np.random.uniform(-20, 20, self.n) 
         y = y.T 
         self.add_data_history(y)
         # Using past t-1 predicion to fit the new data points
-        predictions_t1 =np.matmul(x, np.diag(weight.T[0]))
-        #print("preds=\n",predictions_t1)
+        
+        accumulated_weight = np.matmul(accumulated_weight, np.diag(iter_weight.T[0]))
+        pre_compute_x =np.matmul(x, accumulated_weight)
+        
+        #print("accumulated_weight=\n",accumulated_weight, "\niter_weight=\n",iter_weight)
+        #weight_past = weight
+        #print("precomp=\n",pre_compute_x)
 
         # Iterating through all the epochs  
         for epoch in range(self.training_epochs): 
           
           # Feeding each data point into the optimizer using Feed Dictionary 
-          sess.run(self.optimizer, feed_dict = {self.X : predictions_t1, self.Y : y}) 
-
-          # Displaying the result after every 50 epochs 
-          if (epoch) % 50 == 0: 
-            # Calculating the cost a every epoch 
-            c = sess.run(self.cost, feed_dict = {self.X : predictions_t1, self.Y : y}) 
-            #print("Epoch", (epoch), ": cost =", c, "\nW =\n", sess.run(self.W)) 
-            #print("============================================")
+          sess.run(self.optimizer, feed_dict = {self.X : pre_compute_x, self.Y : y}) 
 
         # Storing necessary values to be used outside the Session 
-        training_cost = sess.run(self.cost, feed_dict ={self.X: predictions_t1, self.Y: y}) 
-        weight = sess.run(self.W) 
+        training_cost = sess.run(self.cost, feed_dict ={self.X: pre_compute_x, self.Y: y}) 
+        iter_weight = sess.run(self.W) 
 
-        centered_weights = weight-np.ones((self.num_feat+1,1))
+        centered_weights = iter_weight-np.ones((self.num_feat+1,1))
         step = np.linalg.norm(centered_weights)
         if step > step_limit:
-          original_weight = weight
+          original_weight = iter_weight
           correction_factor = step_limit/step
-          weight = (centered_weights*correction_factor)+np.ones((self.num_feat+1,1))
+          iter_weight = (centered_weights*correction_factor)+np.ones((self.num_feat+1,1))
           print("Oops, this is running away! step:{}. correction_factor={}".format(step,correction_factor))
-          print("original_weight=\n{}\nnew_weight=\n{}".format(original_weight,weight))
+          print("original_weight=\n{}\niter_weight=\n{}".format(original_weight,iter_weight))
+        
         
 
         # Calculating the predictions 
-        predictions = np.matmul(predictions_t1,weight)
+        predictions = np.matmul(pre_compute_x,iter_weight)
         print("============================================")
-        print("Training cost =", training_cost) 
+        print("Training cost =", training_cost)
+        #print("predictions=",predictions.T, "\ny=", y.T, "\nweight=\n",iter_weight.T)
         print("============================================")
 
         # Plotting the Results 
@@ -203,11 +191,11 @@ class PrimeiraLayDeNilton():
     self.camera.snap()
     animation = self.camera.animate(interval=10)
     an_writer = manimation.writers['ffmpeg']
-    writer = an_writer(fps=2, metadata=dict(artist='Nilton Duarte'), bitrate=1000)
+    writer = an_writer(fps=3, metadata=dict(artist='Nilton Duarte'), bitrate=1000)
     animation.save('evo.mp4', writer=writer)
 
 
 
 calc = PrimeiraLayDeNilton(30,2)
 #calc.set_conditions()
-calc.start_calculations(20, 1.5)
+calc.start_calculations(110, 3)

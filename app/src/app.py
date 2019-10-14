@@ -121,7 +121,7 @@ class PrimeiraLayDeNilton():
     #iter_weight = np.ones((self.num_feat+1,1))
     accumulated_weight = np.eye(self.num_feat+1)
     change_sum = 0
-    
+    iter_index = -1
     #print("init_weight",iter_weight.T[0])
 
     self.set_conditions()
@@ -135,7 +135,7 @@ class PrimeiraLayDeNilton():
       # Initializing the Variables 
       sess.run(init) 
       summary_writer = tf.compat.v1.summary.FileWriter(logdir, sess.graph)
-      iter_index = -1
+      
       for incoming_new_values in range(1,new_data_set_count+1):    
         iter_index +=1 
         if True:
@@ -248,6 +248,6 @@ class PrimeiraLayDeNilton():
 
 
 
-calc = PrimeiraLayDeNilton(num_points=10, num_feat=2)
+calc = PrimeiraLayDeNilton(num_points=10, num_feat=3)
 #calc.set_conditions()
-calc.start_calculations(new_data_set_count=4, step_limit=3)
+calc.start_calculations(new_data_set_count=40, step_limit=5)

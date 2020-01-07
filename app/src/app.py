@@ -29,7 +29,7 @@ if tf.gfile.Exists(logdir):
   tf.io.gfile.rmtree(logdir)
 tf.io.gfile.makedirs(logdir)
 
-class PrimeiraLayDeNilton():
+class TF_grad_bounded_time_adaptive():
   def __init__(self, num_points, num_feat):
     fig = plt.figure()
     self.camera = Camera(fig)
@@ -248,6 +248,6 @@ class PrimeiraLayDeNilton():
 
 
 
-calc = PrimeiraLayDeNilton(num_points=10, num_feat=3)
+calc = TF_grad_bounded_time_adaptive(num_points=10, num_feat=3)
 #calc.set_conditions()
 calc.start_calculations(new_data_set_count=40, step_limit=5)
